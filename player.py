@@ -5,9 +5,15 @@ import os
 import pickle
 import struct
 
+from scipy.misc import imresize
 import alsaaudio
 import librosa
 import numpy
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(BASE_DIR, 'timbre.pickle'), 'rb') as fh:
+    TIMBRE_PATTERNS = pickle.load(fh)
 
 
 def enhance_diagonals(R, weight=0.2, steps=1):
@@ -27,11 +33,27 @@ def iter_beat_slices(y, beat_frames):
     yield beat_samples[-1], len(y) - 1
 
 
+def timbre(y):
+    spectrum = numpy.abs(librosa.stft(y))
+    resized = imresize(spectrum, (50, 70))
+    l = []
+    for pattern in TIMBRE_PATTERNS:
+        l.append(numpy.sum(pattern * resized))
+    return l
+
+
 def analyze(y, sample_rate, beat_frames, bins_per_octave=12, n_octaves=7):
     cqt = librosa.cqt(y=y, sr=sample_rate)
     C = librosa.amplitude_to_db(cqt, ref=numpy.max)
     sync = librosa.util.sync(C, beat_frames)
-    return librosa.segment.recurrence_matrix(sync, width=4, mode='affinity')
+    R_cqt = librosa.segment.recurrence_matrix(sync, width=4, mode='affinity')
+
+    tim = numpy.array([
+        timbre(y[s:e]) for s, e in iter_beat_slices(y, beat_frames)
+    ]).T
+    R_timbre = librosa.segment.recurrence_matrix(tim, width=4, mode='affinity')
+
+    return (R_cqt + R_timbre) / 2
 
 
 def load(filename, force=False):
