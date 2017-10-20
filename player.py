@@ -89,13 +89,26 @@ def compute_buffers(y, beat_frames):
 
 
 def normalize(R, threshold):
+    n = len(R)
+
     R = enhance_diagonals(R, 0.8, 4)
 
+    # scale
     x_max = R.max()
     x_min = x_max * threshold
     y_max = (x_max + 0.5) / 2
     # print('mapping {},{} to {},{}'.format(x_min, x_max, 0, y_max))
     R_norm = (R - x_min) / (x_max - x_min) * y_max
+
+    # privilege jumps back in order to prolong playing
+    R *= numpy.ones((n, n)) * 0.9 + numpy.tri(n, k=-1) * 0.1
+
+    # privilege wide jumps
+    M = numpy.zeros((n, n))
+    for i in range(1, n):
+        M += numpy.tri(n, k=-i)
+        M += numpy.tri(n, k=-i).T
+    R *= (M / (n - 1)) ** 0.1
 
     return R_norm * (R_norm > 0)
 
