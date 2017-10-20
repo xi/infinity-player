@@ -1,3 +1,5 @@
+"Play an infinite remix of your favorite songs."
+
 from random import random
 import argparse
 import gzip
@@ -157,10 +159,14 @@ def plot(R):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('filename')
-    parser.add_argument('-t', '--threshold', type=float, default=0.5)
-    parser.add_argument('-f', '--force', action='store_true')
+    parser.add_argument(
+        '-t', '--threshold', type=float, default=0.5, help='Between 0 and 1. '
+        'A higher value will result in fewer but better jumps. (Default: 0.5)')
+    parser.add_argument(
+        '-f', '--force', action='store_true',
+        help='Ignore previously saved analysis data.')
     parser.add_argument('-P', '--plot', action='store_true')
     return parser.parse_args()
 
