@@ -10,6 +10,15 @@ import librosa
 import numpy
 
 
+def enhance_diagonals(R, weight=0.2, steps=1):
+    for i in range(steps):
+        # combine each cell with its diagonal neighbors
+        R1 = numpy.roll(R, (1, 1), (0, 1))
+        R2 = numpy.roll(R, (-1, -1), (0, 1))
+        R = (weight * (R1 + R2) + (1 - weight) * R) / 2
+    return R
+
+
 def iter_beat_slices(y, beat_frames):
     beat_samples = librosa.frames_to_samples(beat_frames)
     yield 0, beat_samples[0]
@@ -58,6 +67,8 @@ def compute_buffers(y, beat_frames):
 
 
 def normalize(R, threshold):
+    R = enhance_diagonals(R, 0.8, 4)
+
     x_max = R.max()
     x_min = x_max * threshold
     y_max = (x_max + 0.5) / 2
