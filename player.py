@@ -59,7 +59,7 @@ def analyze(y, sample_rate, beat_frames, bins_per_octave=12, n_octaves=7):
 
 
 def load(filename, force=False):
-    y, sample_rate = librosa.load(filename, sr=None)
+    y, sample_rate = librosa.load(filename, sr=None, mono=False)
 
     fn_inf = filename + '.inf'
     if not force and os.path.exists(fn_inf):
