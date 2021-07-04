@@ -36,10 +36,17 @@ def iter_beat_slices(y, beat_frames):
 def timbre(y):
     spectrum = numpy.abs(librosa.stft(y))
     resized = imresize(spectrum, (50, 70))
-    s = []
-    for pattern in TIMBRE_PATTERNS:
-        s.append(numpy.sum(pattern * resized))
-    return s
+
+    k = len(TIMBRE_PATTERNS)
+    T = numpy.zeros((k, k))
+    s = numpy.zeros((k, 1))
+
+    for i, pattern in enumerate(TIMBRE_PATTERNS):
+        s[i][0] = numpy.sum(TIMBRE_PATTERNS[i] * resized)
+        for j, pattern2 in enumerate(TIMBRE_PATTERNS):
+            T[i][j] = numpy.sum(pattern * pattern2)
+
+    return numpy.linalg.inv(T) @ s
 
 
 def analyze(y, sample_rate, beat_frames, bins_per_octave=12, n_octaves=7):
