@@ -144,15 +144,6 @@ def play(buffers, sample_rate, jumps):
             i = 0
 
 
-def plot(R):
-    import librosa.display
-    import matplotlib.pyplot as plt
-
-    plt.figure()
-    librosa.display.specshow(R)
-    plt.show()
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('filename')
@@ -162,7 +153,6 @@ def parse_args():
     parser.add_argument(
         '-f', '--force', action='store_true',
         help='Ignore previously saved analysis data.')
-    parser.add_argument('-P', '--plot', action='store_true')
     return parser.parse_args()
 
 
@@ -179,9 +169,6 @@ def main():
     print('Detected {} jump opportunities on {} beats'.format(
         jump_count, len(buffers)
     ))
-
-    if args.plot:
-        plot(R)
 
     print('Playing… (Press Ctrl-C to stop)')
     play(buffers, sample_rate, jumps)
