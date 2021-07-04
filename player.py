@@ -17,13 +17,13 @@ with open(os.path.join(BASE_DIR, 'timbre.pickle'), 'rb') as fh:
     TIMBRE_PATTERNS = pickle.load(fh)
 
 
-def enhance_diagonals(R, weight=0.2, steps=1):
+def enhance_diagonals(jumps, weight=0.2, steps=1):
     for i in range(steps):
         # combine each cell with its diagonal neighbors
-        R1 = numpy.roll(R, (1, 1), (0, 1))
-        R2 = numpy.roll(R, (-1, -1), (0, 1))
-        R = (weight * (R1 + R2) + (1 - weight) * R) / 2
-    return R
+        jumps1 = numpy.roll(jumps, (1, 1), (0, 1))
+        jumps2 = numpy.roll(jumps, (-1, -1), (0, 1))
+        jumps = (weight * (jumps1 + jumps2) + (1 - weight) * jumps) / 2
+    return jumps
 
 
 def iter_beat_slices(y, beat_frames):
@@ -68,16 +68,16 @@ def load(filename, force=False):
     fn_inf = filename + '.inf'
     if not force and os.path.exists(fn_inf):
         with gzip.open(fn_inf, 'rb') as fh:
-            beat_frames, R = pickle.load(fh)
+            beat_frames, jumps = pickle.load(fh)
     else:
         print('Analyzing…')
         tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sample_rate)
-        R = analyze(y, sample_rate, beat_frames)
+        jumps = analyze(y, sample_rate, beat_frames)
 
         with gzip.open(fn_inf, 'wb') as fh:
-            pickle.dump((beat_frames, R), fh)
+            pickle.dump((beat_frames, jumps), fh)
 
-    return y, sample_rate, beat_frames, R
+    return y, sample_rate, beat_frames, jumps
 
 
 def compute_buffers(y, beat_frames):
@@ -91,32 +91,32 @@ def compute_buffers(y, beat_frames):
     return buffers
 
 
-def normalize(R, threshold):
-    n = len(R)
+def normalize(jumps, threshold):
+    n = len(jumps)
 
-    R = enhance_diagonals(R, 0.8, 4)
+    jumps = enhance_diagonals(jumps, 0.8, 4)
 
     # scale
-    x_max = R.max()
+    x_max = jumps.max()
     x_min = x_max * threshold
     y_max = (x_max + 0.5) / 2
-    R_norm = (R - x_min) / (x_max - x_min) * y_max
+    jumps_norm = (jumps - x_min) / (x_max - x_min) * y_max
 
     # privilege jumps back in order to prolong playing
-    R *= numpy.ones((n, n)) * 0.9 + numpy.tri(n, k=-1) * 0.1
+    jumps *= numpy.ones((n, n)) * 0.9 + numpy.tri(n, k=-1) * 0.1
 
     # privilege wide jumps
     M = numpy.zeros((n, n))
     for i in range(1, n):
         M += numpy.tri(n, k=-i)
         M += numpy.tri(n, k=-i).T
-    R *= (M / (n - 1)) ** 0.1
+    jumps *= (M / (n - 1)) ** 0.1
 
-    return R_norm * (R_norm > 0)
+    return jumps_norm * (jumps_norm > 0)
 
 
-def get_next_position(i, R):
-    for j, p in sorted(enumerate(R[i]), key=lambda jp: -jp[1]):
+def get_next_position(i, jumps):
+    for j, p in sorted(enumerate(jumps[i]), key=lambda jp: -jp[1]):
         if p > random():
             return j + 1
     return i + 1
@@ -151,17 +151,17 @@ def main():
     args = parse_args()
 
     print('Loading', args.filename)
-    y, sample_rate, beat_frames, R = load(args.filename, args.force)
-    R = normalize(R, args.threshold)
+    y, sample_rate, beat_frames, jumps = load(args.filename, args.force)
+    jumps = normalize(jumps, args.threshold)
     buffers = compute_buffers(y, beat_frames)
-    jump_count = sum(sum(R > 0))
+    jump_count = sum(sum(jumps > 0))
 
     print('Detected {} jump opportunities on {} beats'.format(
         jump_count, len(buffers)
     ))
 
     print('Playing… (Press Ctrl-C to stop)')
-    play(buffers, sample_rate, R)
+    play(buffers, sample_rate, jumps)
 
 
 if __name__ == '__main__':
