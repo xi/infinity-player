@@ -99,20 +99,21 @@ def normalize(jumps, threshold):
     # scale
     x_max = jumps.max()
     x_min = x_max * threshold
-    y_max = (x_max + 0.5) / 2
+    y_max = x_max ** 0.5
     jumps = (jumps - x_min) / (x_max - x_min) * y_max
+    jumps *= jumps > 0
 
     # privilege jumps back in order to prolong playing
-    jumps *= numpy.ones((n, n)) * 0.9 + numpy.tri(n, k=-1) * 0.1
+    jumps *= numpy.ones((n, n)) - numpy.tri(n, k=-1).T * 0.5
 
     # privilege wide jumps
     M = numpy.zeros((n, n))
     for i in range(1, n):
         M += numpy.tri(n, k=-i)
         M += numpy.tri(n, k=-i).T
-    jumps *= (M / (n - 1)) ** 0.1
+    jumps *= (M / (n - 1)) ** 0.4
 
-    return jumps * (jumps > 0)
+    return jumps
 
 
 def get_next_position(i, jumps):
@@ -139,8 +140,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('filename')
     parser.add_argument(
-        '-t', '--threshold', type=float, default=0.5, help='Between 0 and 1. '
-        'A higher value will result in fewer but better jumps. (Default: 0.5)')
+        '-t', '--threshold', type=float, default=0.8, help='Between 0 and 1. '
+        'A higher value will result in fewer but better jumps. (Default: 0.8)')
     parser.add_argument(
         '-f', '--force', action='store_true',
         help='Ignore previously saved analysis data.')
