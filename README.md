@@ -11,7 +11,7 @@ Analysing takes some time, so the result is saved next to the audiofile.
 
 ## Quickstart
 
-    pip install librosa pyalsaaudio pillow
+    pip install -r requirements.txt
     python player.py <filename>
 
 ## Open Tasks
