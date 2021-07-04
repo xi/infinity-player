@@ -115,16 +115,8 @@ def normalize(R, threshold):
     return R_norm * (R_norm > 0)
 
 
-def compute_jumps(R):
-    jumps = []
-    for row in R:
-        new_jumps = [(i, p) for i, p in enumerate(row) if p > 0]
-        jumps.append(sorted(new_jumps, key=lambda ip: -ip[1]))
-    return jumps
-
-
-def get_next_position(i, jumps):
-    for j, p in jumps[i]:
+def get_next_position(i, R):
+    for j, p in sorted(enumerate(R[i]), key=lambda jp: -jp[1]):
         if p > random():
             return j + 1
     return i + 1
@@ -162,15 +154,14 @@ def main():
     y, sample_rate, beat_frames, R = load(args.filename, args.force)
     R = normalize(R, args.threshold)
     buffers = compute_buffers(y, beat_frames)
-    jumps = compute_jumps(R)
-    jump_count = sum(len(row) for row in jumps)
+    jump_count = sum(sum(R > 0))
 
     print('Detected {} jump opportunities on {} beats'.format(
         jump_count, len(buffers)
     ))
 
     print('Playing… (Press Ctrl-C to stop)')
-    play(buffers, sample_rate, jumps)
+    play(buffers, sample_rate, R)
 
 
 if __name__ == '__main__':
