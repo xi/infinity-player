@@ -6,7 +6,7 @@ import gzip
 import os
 import pickle
 
-from scipy.misc import imresize
+from PIL import Image
 import librosa
 import numpy
 import soundcard
@@ -35,7 +35,7 @@ def iter_beat_slices(y, beat_frames):
 
 def timbre(y):
     spectrum = numpy.abs(librosa.stft(y))
-    resized = imresize(spectrum, (50, 70))
+    resized = numpy.array(Image.fromarray(spectrum).resize((70, 50)))
 
     k = len(TIMBRE_PATTERNS)
     T = numpy.zeros((k, k))
