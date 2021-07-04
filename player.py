@@ -5,12 +5,11 @@ import argparse
 import gzip
 import os
 import pickle
-import struct
 
 from scipy.misc import imresize
-import alsaaudio
 import librosa
 import numpy
+import soundcard
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -80,10 +79,7 @@ def compute_buffers(y, beat_frames):
 
     buffers = []
     for start, end in iter_beat_slices(raw, beat_frames):
-        samples = raw[start:end]
-        data = struct.pack("h" * len(samples), *samples)
-        duration = librosa.samples_to_time(end - start)
-        buffers.append((data, duration))
+        buffers.append(y.T[start:end])
 
     return buffers
 
@@ -128,21 +124,16 @@ def get_next_position(i, jumps):
 
 
 def play(buffers, sample_rate, jumps):
-    # https://larsimmisch.github.io/pyalsaaudio/libalsaaudio.html#pcm-objects
-    pcm = alsaaudio.PCM()
-    pcm.setrate(sample_rate)
-    pcm.setchannels(1)
-
     i = 0
     n = len(buffers)
 
-    while True:
-        data, duration = buffers[i]
-        pcm.write(data)
+    with soundcard.default_speaker().player(samplerate=sample_rate) as sp:
+        while True:
+            sp.play(buffers[i])
 
-        i = get_next_position(i, jumps)
-        if i >= n:
-            i = 0
+            i = get_next_position(i, jumps)
+            if i >= n:
+                i = 0
 
 
 def parse_args():

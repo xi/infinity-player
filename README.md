@@ -28,10 +28,6 @@ Any help would be appreciated
     possible, e.g. to prevent the song from looping through the same part again
     and again.
 
--   **Better audio output.** alsaaudio was the first library I got to work, but
-    it has many flaws. It blocks a lot and it is impossible to know which beat
-    is currently playing.
-
 -   **Visual Feedback.** The original infinite jukebox has a great UI. This one
     has currently none.
 
