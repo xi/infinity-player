@@ -100,7 +100,7 @@ def normalize(jumps, threshold):
     x_max = jumps.max()
     x_min = x_max * threshold
     y_max = (x_max + 0.5) / 2
-    jumps_norm = (jumps - x_min) / (x_max - x_min) * y_max
+    jumps = (jumps - x_min) / (x_max - x_min) * y_max
 
     # privilege jumps back in order to prolong playing
     jumps *= numpy.ones((n, n)) * 0.9 + numpy.tri(n, k=-1) * 0.1
@@ -112,7 +112,7 @@ def normalize(jumps, threshold):
         M += numpy.tri(n, k=-i).T
     jumps *= (M / (n - 1)) ** 0.1
 
-    return jumps_norm * (jumps_norm > 0)
+    return jumps * (jumps > 0)
 
 
 def get_next_position(i, jumps):
