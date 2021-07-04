@@ -29,37 +29,35 @@ def enhance_diagonals(R, weight=0.2, steps=1):
 
 def iter_beat_slices(y, beat_frames):
     beat_samples = librosa.frames_to_samples(beat_frames)
-    yield 0, beat_samples[0]
+    beat_samples = [0, *beat_samples, len(y) - 1]
     for start, end in zip(beat_samples[0:-1], beat_samples[1:]):
         yield start, end
-    yield beat_samples[-1], len(y) - 1
 
 
 def timbre(y):
     spectrum = numpy.abs(librosa.stft(y))
     resized = imresize(spectrum, (50, 70))
-    l = []
+    s = []
     for pattern in TIMBRE_PATTERNS:
-        l.append(numpy.sum(pattern * resized))
-    return l
+        s.append(numpy.sum(pattern * resized))
+    return s
 
 
 def analyze(y, sample_rate, beat_frames, bins_per_octave=12, n_octaves=7):
-    cqt = librosa.cqt(y=y, sr=sample_rate)
-    C = librosa.amplitude_to_db(cqt, ref=numpy.max)
-    sync = librosa.util.sync(C, beat_frames)
-    R_cqt = librosa.segment.recurrence_matrix(sync, width=4, mode='affinity')
+    # cqt = librosa.cqt(y=y, sr=sample_rate)
+    # C = librosa.amplitude_to_db(cqt, ref=numpy.max)
+    # sync = librosa.util.sync(C, beat_frames)
+    # R_cqt = librosa.segment.recurrence_matrix(sync, width=4, mode='affinity')
+    # return (R_cqt + R_timbre) / 2
 
     tim = numpy.array([
-        timbre(y[s:e]) for s, e in iter_beat_slices(y, beat_frames)
+        timbre(y[start:end]) for start, end in iter_beat_slices(y, beat_frames)
     ]).T
-    R_timbre = librosa.segment.recurrence_matrix(tim, width=4, mode='affinity')
-
-    return (R_cqt + R_timbre) / 2
+    return librosa.segment.recurrence_matrix(tim, width=4, mode='affinity')
 
 
 def load(filename, force=False):
-    y, sample_rate = librosa.load(filename, sr=None)
+    y, sample_rate = librosa.load(filename)
 
     fn_inf = filename + '.inf'
     if not force and os.path.exists(fn_inf):
@@ -99,7 +97,6 @@ def normalize(R, threshold):
     x_max = R.max()
     x_min = x_max * threshold
     y_max = (x_max + 0.5) / 2
-    # print('mapping {},{} to {},{}'.format(x_min, x_max, 0, y_max))
     R_norm = (R - x_min) / (x_max - x_min) * y_max
 
     # privilege jumps back in order to prolong playing
@@ -118,8 +115,8 @@ def normalize(R, threshold):
 def compute_jumps(R):
     jumps = []
     for row in R:
-        l = [(i, p) for i, p in enumerate(row) if p > 0]
-        jumps.append(sorted(l, key=lambda x: -x[1]))
+        new_jumps = [(i, p) for i, p in enumerate(row) if p > 0]
+        jumps.append(sorted(new_jumps, key=lambda ip: -ip[1]))
     return jumps
 
 
@@ -138,14 +135,12 @@ def play(buffers, sample_rate, jumps):
 
         for j, p in jumps[i]:
             if p > random():
-                # print('jump', i, j)
                 i = j
                 break
 
         i = i + 1
 
         if i >= n:
-            # print('reached end')
             i = 0
 
 
@@ -182,7 +177,8 @@ def main():
     jump_count = sum(len(row) for row in jumps)
 
     print('Detected {} jump opportunities on {} beats'.format(
-        jump_count, len(buffers)))
+        jump_count, len(buffers)
+    ))
 
     if args.plot:
         plot(R)
