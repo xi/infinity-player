@@ -28,9 +28,6 @@ Any help would be appreciated
     possible, e.g. to prevent the song from looping through the same part again
     and again.
 
--   **Visual Feedback.** The original infinite jukebox has a great UI. This one
-    has currently none.
-
 -   **No Stereo.** This one is probably not that hard to fix. I just skipped it
     because there were more interesting problems to think about.
 

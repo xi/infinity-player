@@ -5,6 +5,7 @@ import argparse
 import gzip
 import os
 import pickle
+import shutil
 
 from PIL import Image
 import librosa
@@ -15,6 +16,21 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 with open(os.path.join(BASE_DIR, 'timbre.pickle'), 'rb') as fh:
     TIMBRE_PATTERNS = pickle.load(fh)
+
+
+def print_progress(i, n):
+    cols, lines = shutil.get_terminal_size()
+    pos = i * (cols - 5) // n
+    s = ''
+    for x in range(cols - 5):
+        if x == pos:
+            s += '|'
+        elif x < pos:
+            s += '='
+        else:
+            s += '-'
+    s += f' {i:>4}'
+    print(s, end='\r')
 
 
 def enhance_diagonals(jumps, weight=0.2, steps=1):
@@ -130,6 +146,7 @@ def play(buffers, sample_rate, jumps):
     with soundcard.default_speaker().player(samplerate=sample_rate) as sp:
         while True:
             sp.play(buffers[i])
+            print_progress(i, n)
 
             i = get_next_position(i, jumps)
             if i >= n:
