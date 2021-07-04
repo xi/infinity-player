@@ -120,6 +120,13 @@ def compute_jumps(R):
     return jumps
 
 
+def get_next_position(i, jumps):
+    for j, p in jumps[i]:
+        if p > random():
+            return j + 1
+    return i + 1
+
+
 def play(buffers, sample_rate, jumps):
     # https://larsimmisch.github.io/pyalsaaudio/libalsaaudio.html#pcm-objects
     pcm = alsaaudio.PCM()
@@ -133,13 +140,7 @@ def play(buffers, sample_rate, jumps):
         data, duration = buffers[i]
         pcm.write(data)
 
-        for j, p in jumps[i]:
-            if p > random():
-                i = j
-                break
-
-        i = i + 1
-
+        i = get_next_position(i, jumps)
         if i >= n:
             i = 0
 
