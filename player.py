@@ -79,7 +79,7 @@ def analyze(y, sample_rate, beat_frames, bins_per_octave=12, n_octaves=7):
 
 
 def load(filename, force=False):
-    y, sample_rate = librosa.load(filename)
+    y, sample_rate = librosa.load(filename, mono=False)
 
     fn_inf = filename + '.inf'
     if not force and os.path.exists(fn_inf):
@@ -87,8 +87,9 @@ def load(filename, force=False):
             beat_frames, jumps = pickle.load(fh)
     else:
         print('Analyzing…')
-        tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sample_rate)
-        jumps = analyze(y, sample_rate, beat_frames)
+        y1, sample_rate1 = librosa.load(filename)
+        tempo, beat_frames = librosa.beat.beat_track(y=y1, sr=sample_rate1)
+        jumps = analyze(y1, sample_rate1, beat_frames)
 
         with gzip.open(fn_inf, 'wb') as fh:
             pickle.dump((beat_frames, jumps), fh)

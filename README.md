@@ -28,9 +28,6 @@ Any help would be appreciated
     possible, e.g. to prevent the song from looping through the same part again
     and again.
 
--   **No Stereo.** This one is probably not that hard to fix. I just skipped it
-    because there were more interesting problems to think about.
-
 ## Prior Art
 
 -   Of course, the now defunct original [Infinite
