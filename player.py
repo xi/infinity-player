@@ -95,18 +95,10 @@ def enhance(jumps, threshold):
     y_max = x_max ** 0.5
     jumps = (jumps - x_min) / (x_max - x_min) * y_max
     jumps *= jumps > 0
+    jumps += numpy.eye(n)
 
     # privilege jumps back in order to prolong playing
-    jumps *= numpy.ones((n, n)) - numpy.tri(n, k=-1).T * 0.5
-
-    # privilege wide jumps
-    m = numpy.zeros((n, n))
-    for i in range(1, n):
-        m += numpy.tri(n, k=-i)
-        m += numpy.tri(n, k=-i).T
-    jumps *= (m / (n - 1)) ** 0.4
-
-    jumps += numpy.eye(n)
+    jumps[:] *= numpy.linspace(numpy.ones(n), numpy.ones(n) * 0.5, n)
 
     return jumps
 
