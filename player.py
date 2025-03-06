@@ -2,9 +2,9 @@
 
 import argparse
 import gzip
-import os
 import pickle
 import shutil
+from pathlib import Path
 from random import random
 
 import librosa
@@ -12,9 +12,9 @@ import numpy
 import soundcard
 from PIL import Image
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = Path(__file__).parent
 
-with open(os.path.join(BASE_DIR, 'timbre.pickle'), 'rb') as fh:
+with open(BASE_DIR / 'timbre.pickle', 'rb') as fh:
     TIMBRE_PATTERNS = pickle.load(fh)
 
 
@@ -80,9 +80,9 @@ def analyze(y, sample_rate, beat_frames, bins_per_octave=12, n_octaves=7):
 def load(filename, *, force=False):
     y, sample_rate = librosa.load(filename, mono=False)
 
-    fn_inf = filename + '.inf'
-    if not force and os.path.exists(fn_inf):
-        with gzip.open(fn_inf, 'rb') as fh:
+    path_inf = Path(filename + '.inf')
+    if not force and path_inf.exists():
+        with gzip.open(path_inf, 'rb') as fh:
             beat_frames, jumps = pickle.load(fh)
     else:
         print('Analyzing…')
@@ -90,7 +90,7 @@ def load(filename, *, force=False):
         tempo, beat_frames = librosa.beat.beat_track(y=y1, sr=sample_rate1)
         jumps = analyze(y1, sample_rate1, beat_frames)
 
-        with gzip.open(fn_inf, 'wb') as fh:
+        with gzip.open(path_inf, 'wb') as fh:
             pickle.dump((beat_frames, jumps), fh)
 
     return y, sample_rate, beat_frames, jumps
