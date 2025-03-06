@@ -3,9 +3,9 @@
 import argparse
 import gzip
 import pickle
+import random
 import shutil
 from pathlib import Path
-from random import random
 
 import librosa
 import numpy
@@ -106,14 +106,15 @@ def enhance(jumps, threshold):
         m += numpy.tri(n, k=-i).T
     jumps *= (m / (n - 1)) ** 0.4
 
+    jumps += numpy.eye(n)
+
     return jumps
 
 
 def get_next_position(i, jumps):
-    for j, p in sorted(enumerate(jumps[i]), key=lambda jp: -jp[1]):
-        if p > random():
-            return j + 1
-    return i + 1
+    choices, weights = zip(*enumerate(jumps[i]))
+    j = random.choices(choices, weights)
+    return j[0] + 1
 
 
 def play(buffers, sample_rate, jumps):
