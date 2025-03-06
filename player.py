@@ -1,16 +1,16 @@
 "Play an infinite remix of your favorite songs."
 
-from random import random
 import argparse
 import gzip
 import os
 import pickle
 import shutil
+from random import random
 
-from PIL import Image
 import librosa
 import numpy
 import soundcard
+from PIL import Image
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -34,7 +34,7 @@ def print_progress(i, n):
 
 
 def enhance_diagonals(jumps, weight=0.2, steps=1):
-    for i in range(steps):
+    for _ in range(steps):
         # combine each cell with its diagonal neighbors
         jumps1 = numpy.roll(jumps, (1, 1), (0, 1))
         jumps2 = numpy.roll(jumps, (-1, -1), (0, 1))
@@ -45,8 +45,7 @@ def enhance_diagonals(jumps, weight=0.2, steps=1):
 def iter_beat_slices(y, beat_frames):
     beat_samples = librosa.frames_to_samples(beat_frames)
     beat_samples = [0, *beat_samples, len(y) - 1]
-    for start, end in zip(beat_samples[0:-1], beat_samples[1:]):
-        yield start, end
+    yield from zip(beat_samples[0:-1], beat_samples[1:])
 
 
 def timbre(y):
@@ -54,15 +53,15 @@ def timbre(y):
     resized = numpy.array(Image.fromarray(spectrum).resize((70, 50)))
 
     k = len(TIMBRE_PATTERNS)
-    T = numpy.zeros((k, k))
+    t = numpy.zeros((k, k))
     s = numpy.zeros((k, 1))
 
     for i, pattern in enumerate(TIMBRE_PATTERNS):
         s[i][0] = numpy.sum(TIMBRE_PATTERNS[i] * resized)
         for j, pattern2 in enumerate(TIMBRE_PATTERNS):
-            T[i][j] = numpy.sum(pattern * pattern2)
+            t[i][j] = numpy.sum(pattern * pattern2)
 
-    return numpy.linalg.inv(T) @ s
+    return numpy.linalg.inv(t) @ s
 
 
 def analyze(y, sample_rate, beat_frames, bins_per_octave=12, n_octaves=7):
@@ -78,7 +77,7 @@ def analyze(y, sample_rate, beat_frames, bins_per_octave=12, n_octaves=7):
     return librosa.segment.recurrence_matrix(tim, width=4, mode='affinity')
 
 
-def load(filename, force=False):
+def load(filename, *, force=False):
     y, sample_rate = librosa.load(filename, mono=False)
 
     fn_inf = filename + '.inf'
@@ -124,11 +123,11 @@ def normalize(jumps, threshold):
     jumps *= numpy.ones((n, n)) - numpy.tri(n, k=-1).T * 0.5
 
     # privilege wide jumps
-    M = numpy.zeros((n, n))
+    m = numpy.zeros((n, n))
     for i in range(1, n):
-        M += numpy.tri(n, k=-i)
-        M += numpy.tri(n, k=-i).T
-    jumps *= (M / (n - 1)) ** 0.4
+        m += numpy.tri(n, k=-i)
+        m += numpy.tri(n, k=-i).T
+    jumps *= (m / (n - 1)) ** 0.4
 
     return jumps
 
@@ -170,15 +169,12 @@ def main():
     args = parse_args()
 
     print('Loading', args.filename)
-    y, sample_rate, beat_frames, jumps = load(args.filename, args.force)
+    y, sample_rate, beat_frames, jumps = load(args.filename, force=args.force)
     jumps = normalize(jumps, args.threshold)
     buffers = compute_buffers(y, beat_frames)
     jump_count = sum(sum(jumps > 0))
 
-    print('Detected {} jump opportunities on {} beats'.format(
-        jump_count, len(buffers)
-    ))
-
+    print(f'Detected {jump_count} jump opportunities on {len(buffers)} beats')
     print('Playing… (Press Ctrl-C to stop)')
     play(buffers, sample_rate, jumps)
 
