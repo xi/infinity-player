@@ -78,10 +78,10 @@ def load(filename, *, force=False):
             beat_frames, jumps = pickle.load(fh)
     else:
         print('Analyzing…')
-        y1, sample_rate1 = librosa.load(filename)
-        tempo, beat_frames = librosa.beat.beat_track(y=y1, sr=sample_rate1)
-        buffers1 = compute_buffers(y1, beat_frames)
-        jumps = analyze(buffers1)
+        y_mono, _ = librosa.load(filename)
+        tempo, beat_frames = librosa.beat.beat_track(y=y_mono, sr=sample_rate)
+        buffers_mono = compute_buffers(y_mono, beat_frames)
+        jumps = analyze(buffers_mono)
 
         with gzip.open(path_inf, 'wb') as fh:
             pickle.dump((beat_frames, jumps), fh)
