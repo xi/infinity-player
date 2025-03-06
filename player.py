@@ -42,9 +42,10 @@ def enhance_diagonals(jumps, weight=0.2, steps=1):
     return jumps
 
 
-def iter_beat_slices(beat_frames):
+def compute_buffers(y, beat_frames):
     beat_samples = librosa.frames_to_samples(beat_frames)
-    yield from zip([0, *beat_samples], [*beat_samples, None])
+    ranges = zip([0, *beat_samples], [*beat_samples, None])
+    return [y.T[start:end] for start, end in ranges]
 
 
 def timbre(y):
@@ -63,11 +64,9 @@ def timbre(y):
     return numpy.linalg.inv(t) @ s
 
 
-def analyze(y, beat_frames):
-    tim = numpy.array([
-        timbre(y[start:end]) for start, end in iter_beat_slices(beat_frames)
-    ]).T
-    return librosa.segment.recurrence_matrix(tim, width=4, mode='affinity')
+def analyze(buffers):
+    timbres = numpy.array([timbre(buf) for buf in buffers]).T
+    return librosa.segment.recurrence_matrix(timbres, width=4, mode='affinity')
 
 
 def load(filename, *, force=False):
@@ -81,23 +80,13 @@ def load(filename, *, force=False):
         print('Analyzing…')
         y1, sample_rate1 = librosa.load(filename)
         tempo, beat_frames = librosa.beat.beat_track(y=y1, sr=sample_rate1)
-        jumps = analyze(y1, beat_frames)
+        buffers1 = compute_buffers(y1, beat_frames)
+        jumps = analyze(buffers1)
 
         with gzip.open(path_inf, 'wb') as fh:
             pickle.dump((beat_frames, jumps), fh)
 
-    return y, sample_rate, beat_frames, jumps
-
-
-def compute_buffers(y, beat_frames):
-    int_max = numpy.iinfo(numpy.int16).max
-    raw = (y * int_max).astype(numpy.int16).T.copy(order='C')
-
-    buffers = []
-    for start, end in iter_beat_slices(beat_frames):
-        buffers.append(y.T[start:end])
-
-    return buffers
+    return compute_buffers(y, beat_frames), sample_rate, jumps
 
 
 def normalize(jumps, threshold):
@@ -162,9 +151,8 @@ def main():
     args = parse_args()
 
     print('Loading', args.filename)
-    y, sample_rate, beat_frames, jumps = load(args.filename, force=args.force)
+    buffers, sample_rate, jumps = load(args.filename, force=args.force)
     jumps = normalize(jumps, args.threshold)
-    buffers = compute_buffers(y, beat_frames)
     jump_count = sum(sum(jumps > 0))
 
     print(f'Detected {jump_count} jump opportunities on {len(buffers)} beats')
