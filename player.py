@@ -121,13 +121,16 @@ def play(buffers, sample_rate, jumps):
     n = len(buffers)
 
     with soundcard.default_speaker().player(samplerate=sample_rate) as sp:
-        while True:
-            sp.play(buffers[i])
-            print_progress(i, n)
+        try:
+            while True:
+                sp.play(buffers[i])
+                print_progress(i, n)
 
-            i = get_next_position(i, jumps)
-            if i >= n:
-                i = 0
+                i = get_next_position(i, jumps)
+                if i >= n:
+                    i = 0
+        except KeyboardInterrupt:
+            print('\nStopping…')
 
 
 def parse_args():
