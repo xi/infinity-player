@@ -33,15 +33,6 @@ def print_progress(i, n):
     print(s, end='\r')
 
 
-def enhance_diagonals(jumps, weight=0.2, steps=1):
-    for _ in range(steps):
-        # combine each cell with its diagonal neighbors
-        jumps1 = numpy.roll(jumps, (1, 1), (0, 1))
-        jumps2 = numpy.roll(jumps, (-1, -1), (0, 1))
-        jumps = (weight * (jumps1 + jumps2) + (1 - weight) * jumps) / 2
-    return jumps
-
-
 def compute_buffers(y, beat_frames):
     beat_samples = librosa.frames_to_samples(beat_frames)
     ranges = zip([0, *beat_samples], [*beat_samples, None])
@@ -89,10 +80,14 @@ def load(filename, *, force=False):
     return compute_buffers(y, beat_frames), sample_rate, jumps
 
 
-def normalize(jumps, threshold):
+def enhance(jumps, threshold):
     n = len(jumps)
 
-    jumps = enhance_diagonals(jumps, 0.8, 4)
+    # beats are more similar if the surrounding beats are similar
+    for _ in range(4):
+        jumps_before = numpy.roll(jumps, (-1, -1), (0, 1))
+        jumps_after = numpy.roll(jumps, (1, 1), (0, 1))
+        jumps = 0.4 * jumps_before + 0.4 * jumps_after + 0.2 * jumps
 
     # scale
     x_max = jumps.max()
@@ -152,7 +147,7 @@ def main():
 
     print('Loading', args.filename)
     buffers, sample_rate, jumps = load(args.filename, force=args.force)
-    jumps = normalize(jumps, args.threshold)
+    jumps = enhance(jumps, args.threshold)
     jump_count = sum(sum(jumps > 0))
 
     print(f'Detected {jump_count} jump opportunities on {len(buffers)} beats')
