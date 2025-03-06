@@ -103,23 +103,27 @@ def enhance(jumps, threshold):
     return jumps
 
 
-def get_next_position(i, jumps):
-    choices, weights = zip(*enumerate(jumps[i]))
-    j = random.choices(choices, weights)
+def get_next_position(i, jumps, counts):
+    n = len(jumps)
+    j = numpy.array(range(n))
+    w_count = (numpy.cumsum(counts[::-1] * (j + 1)) / numpy.cumsum(j + 1))[::-1]
+    j = random.choices(range(n), jumps[i] / (w_count + 1))
     return j[0] + 1
 
 
 def play(buffers, sample_rate, jumps):
     i = 0
     n = len(buffers)
+    counts = numpy.zeros(n)
 
     with soundcard.default_speaker().player(samplerate=sample_rate) as sp:
         try:
             while True:
                 sp.play(buffers[i])
+                counts[i] += 1
                 print_progress(i, n)
 
-                i = get_next_position(i, jumps)
+                i = get_next_position(i, jumps, counts)
                 if i >= n:
                     i = 0
         except KeyboardInterrupt:

@@ -22,11 +22,8 @@ Any help would be appreciated
     *Constant-Q chromagram* is. The current implementation works ok-ish, but
     there can probably be big improvements.
 
--   **Improve beat selection.** Currently the selection of the next beat
-    depends only on the current beat and a set of precomputed probabilities.
-    Jumps that go back or wide are slightly privileged. I guess a lot more is
-    possible, e.g. to prevent the song from looping through the same part again
-    and again.
+-   **Improve beat selection.** I guess a lot more is possible, e.g. to prevent
+    the song from looping through the same part again and again.
 
 ## Prior Art
 
