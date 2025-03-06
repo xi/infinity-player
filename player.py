@@ -42,10 +42,9 @@ def enhance_diagonals(jumps, weight=0.2, steps=1):
     return jumps
 
 
-def iter_beat_slices(y, beat_frames):
+def iter_beat_slices(beat_frames):
     beat_samples = librosa.frames_to_samples(beat_frames)
-    beat_samples = [0, *beat_samples, len(y) - 1]
-    yield from zip(beat_samples[0:-1], beat_samples[1:])
+    yield from zip([0, *beat_samples], [*beat_samples, None])
 
 
 def timbre(y):
@@ -72,7 +71,7 @@ def analyze(y, sample_rate, beat_frames, bins_per_octave=12, n_octaves=7):
     # return (R_cqt + R_timbre) / 2
 
     tim = numpy.array([
-        timbre(y[start:end]) for start, end in iter_beat_slices(y, beat_frames)
+        timbre(y[start:end]) for start, end in iter_beat_slices(beat_frames)
     ]).T
     return librosa.segment.recurrence_matrix(tim, width=4, mode='affinity')
 
@@ -101,7 +100,7 @@ def compute_buffers(y, beat_frames):
     raw = (y * int_max).astype(numpy.int16).T.copy(order='C')
 
     buffers = []
-    for start, end in iter_beat_slices(raw, beat_frames):
+    for start, end in iter_beat_slices(beat_frames):
         buffers.append(y.T[start:end])
 
     return buffers
