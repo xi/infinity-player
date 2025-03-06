@@ -63,13 +63,7 @@ def timbre(y):
     return numpy.linalg.inv(t) @ s
 
 
-def analyze(y, sample_rate, beat_frames, bins_per_octave=12, n_octaves=7):
-    # cqt = librosa.cqt(y=y, sr=sample_rate)
-    # C = librosa.amplitude_to_db(cqt, ref=numpy.max)
-    # sync = librosa.util.sync(C, beat_frames)
-    # R_cqt = librosa.segment.recurrence_matrix(sync, width=4, mode='affinity')
-    # return (R_cqt + R_timbre) / 2
-
+def analyze(y, beat_frames):
     tim = numpy.array([
         timbre(y[start:end]) for start, end in iter_beat_slices(beat_frames)
     ]).T
@@ -87,7 +81,7 @@ def load(filename, *, force=False):
         print('Analyzing…')
         y1, sample_rate1 = librosa.load(filename)
         tempo, beat_frames = librosa.beat.beat_track(y=y1, sr=sample_rate1)
-        jumps = analyze(y1, sample_rate1, beat_frames)
+        jumps = analyze(y1, beat_frames)
 
         with gzip.open(path_inf, 'wb') as fh:
             pickle.dump((beat_frames, jumps), fh)
