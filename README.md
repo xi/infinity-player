@@ -29,8 +29,8 @@ Any help would be appreciated
 
 -   Of course, the now defunct original [Infinite
     Jukebox](http://labs.echonest.com/Uploader/)
--   A functional fork called [Eternal Jukebox](https://eternal.abimon.org/)
-    ([code](https://github.com/UnderMybrella/EternalJukebox)). It uses the
+-   A functional fork called [Eternal Jukebox](https://eternalbox.floriegl.tech/jukebox_index.html)
+    ([code](https://github.com/floriegl/EternalJukebox)). It uses the
     [audio-analysis](https://developer.spotify.com/web-api/get-audio-analysis/)
     endpoint at spotify
 -   [Remixatron](https://github.com/drensin/Remixatron), a similar project to
