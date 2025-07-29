@@ -2,3 +2,5 @@ librosa
 numpy
 Pillow
 soundcard
+scipy
+scikit-learn
